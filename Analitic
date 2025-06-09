@@ -1,0 +1,1120 @@
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+
+// Main App component
+const App = () => {
+    // State to manage the active section (profile, dodging, farming, builds)
+    const [activeSection, setActiveSection] = useState('profile');
+
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 text-white font-inter p-4 sm:p-6 lg:p-8 flex flex-col items-center">
+            {/* Header and Navigation */}
+            <header className="w-full max-w-4xl bg-gray-800 bg-opacity-70 backdrop-blur-sm rounded-xl p-4 mb-8 shadow-lg">
+                <h1 className="text-4xl sm:text-5xl font-extrabold text-center text-teal-300 drop-shadow-lg mb-4">
+                    Tu Asistente LoL
+                </h1>
+                <nav className="flex flex-wrap justify-center gap-3 sm:gap-4">
+                    <button
+                        onClick={() => setActiveSection('profile')}
+                        className={`px-5 py-2 rounded-lg font-semibold transition-all duration-300 ease-in-out
+                            ${activeSection === 'profile' ? 'bg-teal-600 text-white shadow-md' : 'bg-gray-700 text-gray-200 hover:bg-teal-500 hover:text-white'}`}
+                    >
+                        Análisis de Perfil
+                    </button>
+                    <button
+                        onClick={() => setActiveSection('builds')}
+                        className={`px-5 py-2 rounded-lg font-semibold transition-all duration-300 ease-in-out
+                            ${activeSection === 'builds' ? 'bg-teal-600 text-white shadow-md' : 'bg-gray-700 text-gray-200 hover:bg-teal-500 hover:text-white'}`}
+                    >
+                        Builds y Enfrentamientos
+                    </button>
+                    <button
+                        onClick={() => setActiveSection('dodging')}
+                        className={`px-5 py-2 rounded-lg font-semibold transition-all duration-300 ease-in-out
+                            ${activeSection === 'dodging' ? 'bg-teal-600 text-white shadow-md' : 'bg-gray-700 text-gray-200 hover:bg-teal-500 hover:text-white'}`}
+                    >
+                        Minijuego de Esquive
+                    </button>
+                    <button
+                        onClick={() => setActiveSection('farming')}
+                        className={`px-5 py-2 rounded-lg font-semibold transition-all duration-300 ease-in-out
+                            ${activeSection === 'farming' ? 'bg-teal-600 text-white shadow-md' : 'bg-gray-700 text-gray-200 hover:bg-teal-500 hover:text-white'}`}
+                    >
+                        Minijuego de Farmeo
+                    </button>
+                </nav>
+            </header>
+
+            {/* Render the active section */}
+            <main className="w-full max-w-4xl bg-gray-800 bg-opacity-70 backdrop-blur-sm rounded-xl p-6 sm:p-8 shadow-lg">
+                {activeSection === 'profile' && <ProfileAnalysis />}
+                {activeSection === 'builds' && <BuildsAndMatchups />} {/* New section */}
+                {activeSection === 'dodging' && <DodgingMinigame />}
+                {activeSection === 'farming' && <FarmingMinigame />}
+            </main>
+        </div>
+    );
+};
+
+// Profile Analysis Component (Simulated)
+const ProfileAnalysis = () => {
+    const [summonerName, setSummonerName] = useState('');
+    const [region, setRegion] = useState('na1');
+    const [role, setRole] = useState('any'); // State for role
+    const [analysisResult, setAnalysisResult] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [showMessage, setShowMessage] = useState(false);
+    const [messageContent, setMessageContent] = useState("");
+    const [llmAdvice, setLlmAdvice] = useState(null); // State for general LLM advice
+    const [isLlmLoading, setIsLlmLoading] = useState(false); // State for general LLM loading
+    const [counterSynergyAdvice, setCounterSynergyAdvice] = useState(null); // State for counter/synergy advice
+    const [isCounterSynergyLoading, setIsCounterSynergyLoading] = useState(false); // State for counter/synergy loading
+    const [buildRecommendation, setBuildRecommendation] = useState(null); // State for standard build recommendation
+    const [isBuildRecommendationLoading, setIsBuildRecommendationLoading] = useState(false); // State for standard build recommendation loading
+
+    const handleAnalyze = () => {
+        if (!summonerName.trim()) {
+            setMessageContent("Por favor, introduce tu nombre de invocador.");
+            setShowMessage(true);
+            return;
+        }
+
+        setIsLoading(true);
+        setLlmAdvice(null); // Clear previous LLM advice
+        setCounterSynergyAdvice(null); // Clear previous counter/synergy advice
+        setBuildRecommendation(null); // Clear previous build recommendation
+        
+        // Simulate API call delay
+        setTimeout(() => {
+            const mockData = {
+                summonerName: summonerName,
+                region: region,
+                rank: 'Oro IV',
+                lp: 50,
+                winRate: '52%',
+                kda: '2.8',
+                csPerMinute: '5.5',
+                visionScorePerMinute: '1.2',
+                championMostPlayed: 'Sett', // Champion used for simulation
+                analysis: [
+                    "Tu tasa de victorias es sólida, pero hay margen de mejora.",
+                    "Considera practicar más tu farmeo, apunta a 7-8 CS/minuto para el minuto 10-15.",
+                    "Mejora tu puntuación de visión colocando guardianes de control y explorando más.",
+                    "Presta atención al posicionamiento en las peleas de equipo para maximizar tu KDA y reducir muertes innecesarias.",
+                    "Experimenta con nuevos campeones en partidas normales para expandir tu pool."
+                ]
+            };
+            setAnalysisResult(mockData);
+            setIsLoading(false);
+        }, 1500); // Simulate 1.5 seconds loading time
+    };
+
+    const handleGenerateLlmAdvice = async () => {
+        if (!analysisResult) {
+            setMessageContent("Primero, analiza tu perfil para obtener datos sobre los cuales generar consejos.");
+            setShowMessage(true);
+            return;
+        }
+
+        setIsLlmLoading(true);
+        setLlmAdvice(null); // Clear previous LLM advice
+
+        try {
+            const prompt = `Actúa como un entrenador experto de League of Legends. Basado en los siguientes datos de perfil simulados de un jugador que juega principalmente como ${role === 'any' ? 'cualquier rol' : role}, genera 3-5 consejos de mejora concisos y específicos. Céntrate en áreas como el farmeo, posicionamiento, visión y conocimiento de campeones. Si los datos están incompletos, haz suposiciones razonables.
+
+Datos del jugador:
+Nombre de Invocador: ${analysisResult.summonerName}
+Región: ${analysisResult.region.toUpperCase()}
+Rango: ${analysisResult.rank}
+Tasa de Victorias: ${analysisResult.winRate}
+KDA Promedio: ${analysisResult.kda}
+CS/Minuto Promedio: ${analysisResult.csPerMinute}
+Visión por Minuto Promedio: ${analysisResult.visionScorePerMinute}
+Campeón más jugado: ${analysisResult.championMostPlayed || 'N/A'}
+Rol seleccionado: ${role === 'any' ? 'Cualquier Rol' : role}
+
+Consejos:`;
+
+            let chatHistory = [];
+            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+            const payload = { contents: chatHistory };
+            const apiKey = ""; // Leave as-is. Canvas will provide the key.
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+            if (result.candidates && result.candidates.length > 0 &&
+                result.candidates[0].content && result.candidates[0].content.parts &&
+                result.candidates[0].content.parts.length > 0) {
+                const text = result.candidates[0].content.parts[0].text;
+                setLlmAdvice(text);
+            } else {
+                setMessageContent("No se pudieron generar consejos de la IA. Inténtalo de nuevo.");
+                setShowMessage(true);
+            }
+        } catch (error) {
+            console.error("Error al llamar a la API de Gemini:", error);
+            setMessageContent("Ocurrió un error al generar consejos de la IA. Por favor, inténtalo más tarde.");
+            setShowMessage(true);
+        } finally {
+            setIsLlmLoading(false);
+        }
+    };
+
+    const handleGenerateCounterSynergyAdvice = async () => {
+        if (!analysisResult || !analysisResult.championMostPlayed) {
+            setMessageContent("Primero, analiza tu perfil para que la IA sepa qué campeón es el más jugado.");
+            setShowMessage(true);
+            return;
+        }
+
+        setIsCounterSynergyLoading(true);
+        setCounterSynergyAdvice(null); // Clear previous advice
+
+        try {
+            const prompt = `Actúa como un estratega experto de League of Legends. Dame 3-5 campeones que sean buenos counters para ${analysisResult.championMostPlayed} en la línea de ${role === 'any' ? 'cualquier rol' : role}, y 3-5 campeones que tengan buena sinergia con ${analysisResult.championMostPlayed} en un equipo. Sé conciso y menciona el rol principal para los campeones sugeridos si aplica.
+
+Campeón para analizar: ${analysisResult.championMostPlayed}
+Rol del jugador (si aplica): ${role === 'any' ? 'N/A' : role}
+
+Consejos de Counters y Sinergias:`;
+
+            let chatHistory = [];
+            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+            const payload = { contents: chatHistory };
+            const apiKey = ""; // Leave as-is. Canvas will provide the key.
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+            if (result.candidates && result.candidates.length > 0 &&
+                result.candidates[0].content && result.candidates[0].content.parts &&
+                result.candidates[0].content.parts.length > 0) {
+                const text = result.candidates[0].content.parts[0].text;
+                setCounterSynergyAdvice(text);
+            } else {
+                setMessageContent("No se pudieron generar consejos de enfrentamiento. Inténtalo de nuevo.");
+                setShowMessage(true);
+            }
+        } catch (error) {
+            console.error("Error al llamar a la API de Gemini para counters/sinergias:", error);
+            setMessageContent("Ocurrió un error al generar consejos de enfrentamiento. Por favor, inténtalo más tarde.");
+            setShowMessage(true);
+        } finally {
+            setIsCounterSynergyLoading(false);
+        }
+    };
+
+    const handleGenerateBuildRecommendation = async () => {
+        if (!analysisResult || !analysisResult.championMostPlayed) {
+            setMessageContent("Primero, analiza tu perfil para que la IA sepa qué campeón es el más jugado.");
+            setShowMessage(true);
+            return;
+        }
+        if (role === 'any') {
+            setMessageContent("Por favor, selecciona un rol específico para una recomendación de build más precisa.");
+            setShowMessage(true);
+            return;
+        }
+
+        setIsBuildRecommendationLoading(true);
+        setBuildRecommendation(null); // Clear previous build recommendation
+
+        try {
+            const prompt = `Actúa como un experto en builds de League of Legends. Dame una recomendación de build estándar para el campeón ${analysisResult.championMostPlayed} cuando se juega en el rol de ${role}. Incluye el item inicial, 3-4 items principales, 1-2 items situacionales, y las botas. También sugiere 2 runas clave primarias y 2 runas clave secundarias. Sé conciso y utiliza el formato de lista.
+
+Campeón: ${analysisResult.championMostPlayed}
+Rol: ${role}
+
+Recomendación de Build:`;
+
+            let chatHistory = [];
+            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+            const payload = { contents: chatHistory };
+            const apiKey = ""; // Leave as-is. Canvas will provide the key.
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+            if (result.candidates && result.candidates.length > 0 &&
+                result.candidates[0].content && result.candidates[0].content.parts &&
+                result.candidates[0].content.parts.length > 0) {
+                const text = result.candidates[0].content.parts[0].text;
+                setBuildRecommendation(text);
+            } else {
+                setMessageContent("No se pudo generar la recomendación de build. Inténtalo de nuevo.");
+                setShowMessage(true);
+            }
+        } catch (error) {
+            console.error("Error al llamar a la API de Gemini para la build:", error);
+            setMessageContent("Ocurrió un error al generar la recomendación de build. Por favor, inténtalo más tarde.");
+            setShowMessage(true);
+        } finally {
+            setIsBuildRecommendationLoading(false);
+        }
+    };
+
+
+    // Message box component
+    const MessageBox = ({ message, onClose }) => (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-gray-700 p-6 rounded-lg shadow-xl text-center">
+                <p className="text-lg mb-4">{message}</p>
+                <button
+                    onClick={onClose}
+                    className="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300"
+                >
+                    Entendido
+                </button>
+            </div>
+        </div>
+    );
+
+
+    return (
+        <div className="text-center p-4">
+            <h2 className="text-3xl font-bold mb-6 text-teal-300">Análisis de Perfil</h2>
+            <p className="mb-4 text-gray-300">
+                ¡Aquí podrás obtener consejos personalizados para mejorar en League of Legends!
+                Introduce tu nombre de invocador, región y **rol** para una simulación de análisis.
+            </p>
+
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-6">
+                <input
+                    type="text"
+                    placeholder="Nombre de Invocador"
+                    value={summonerName}
+                    onChange={(e) => setSummonerName(e.target.value)}
+                    className="p-3 rounded-lg bg-gray-700 border border-gray-600 text-white placeholder-gray-400 focus:ring-2 focus:ring-teal-500 focus:border-transparent w-full sm:w-auto"
+                />
+                <select
+                    value={region}
+                    onChange={(e) => setRegion(e.target.value)}
+                    className="p-3 rounded-lg bg-gray-700 border border-gray-600 text-white focus:ring-2 focus:ring-teal-500 focus:border-transparent w-full sm:w-auto"
+                >
+                    <option value="na1">NA1 (Norteamérica)</option>
+                    <option value="euw1">EUW1 (Europa Oeste)</option>
+                    <option value="eun1">EUNE1 (Europa Nórdica y Este)</option>
+                    <option value="kr">KR (Corea)</option>
+                    <option value="las">LAS (Latinoamérica Sur)</option>
+                    <option value="lan">LAN (Latinoamérica Norte)</option>
+                    <option value="br1">BR1 (Brasil)</option>
+                    <option value="oc1">OC1 (Oceanía)</option>
+                    <option value="ru">RU (Rusia)</option>
+                    <option value="tr1">TR1 (Turquía)</option>
+                    <option value="jp1">JP1 (Japón)</option>
+                </select>
+                <select
+                    value={role}
+                    onChange={(e) => setRole(e.target.value)}
+                    className="p-3 rounded-lg bg-gray-700 border border-gray-600 text-white focus:ring-2 focus:ring-teal-500 focus:border-transparent w-full sm:w-auto"
+                >
+                    <option value="any">Cualquier Rol</option>
+                    <option value="Top">Top</option>
+                    <option value="Jungle">Jungla</option>
+                    <option value="Mid">Medio</option>
+                    <option value="ADC">ADC</option>
+                    <option value="Support">Soporte</option>
+                </select>
+                <button
+                    onClick={handleAnalyze}
+                    disabled={isLoading}
+                    className="bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
+                >
+                    {isLoading ? 'Analizando...' : 'Analizar Perfil'}
+                </button>
+            </div>
+
+            {isLoading && (
+                <div className="text-center text-teal-400 text-lg">
+                    Cargando datos... ¡Esto es solo una simulación!
+                </div>
+            )}
+
+            {analysisResult && !isLoading && (
+                <div className="bg-gray-700 p-6 rounded-lg shadow-inner text-left">
+                    <h3 className="text-2xl font-bold mb-4 text-orange-300">Resultados del Análisis (Simulado)</h3>
+                    <p className="mb-2"><strong className="text-teal-200">Invocador:</strong> {analysisResult.summonerName}</p>
+                    <p className="mb-2"><strong className="text-teal-200">Región:</strong> {analysisResult.region.toUpperCase()}</p>
+                    <p className="mb-2"><strong className="text-teal-200">Rango:</strong> {analysisResult.rank}</p>
+                    <p className="mb-2"><strong className="text-teal-200">Victorias/Derrotas:</strong> {analysisResult.winRate}</p>
+                    <p className="mb-2"><strong className="text-teal-200">KDA Promedio:</strong> {analysisResult.kda}</p>
+                    <p className="mb-4"><strong className="text-teal-200">CS/Minuto Promedio:</strong> {analysisResult.csPerMinute}</p>
+                    <p className="mb-4"><strong className="text-teal-200">Campeón más jugado:</strong> {analysisResult.championMostPlayed}</p>
+                    <p className="mb-4"><strong className="text-teal-200">Rol Seleccionado:</strong> {role === 'any' ? 'Cualquier Rol' : role}</p>
+
+
+                    <h4 className="text-xl font-semibold mb-3 text-emerald-300">Consejos de Mejora (Simulados):</h4>
+                    <ul className="list-disc list-inside text-gray-200 space-y-2 mb-4">
+                        {analysisResult.analysis.map((tip, index) => (
+                            <li key={index}>{tip}</li>
+                        ))}
+                    </ul>
+
+                    <div className="flex flex-col sm:flex-row gap-4 mt-6">
+                        <button
+                            onClick={handleGenerateLlmAdvice}
+                            disabled={isLlmLoading}
+                            className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isLlmLoading ? 'Generando Consejos ✨' : 'Obtener Consejos con IA ✨'}
+                        </button>
+                        <button
+                            onClick={handleGenerateCounterSynergyAdvice}
+                            disabled={isCounterSynergyLoading}
+                            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isCounterSynergyLoading ? 'Generando Enfrentamientos ✨' : 'Obtener Consejos de Enfrentamiento ✨'}
+                        </button>
+                    </div>
+                    <button
+                        onClick={handleGenerateBuildRecommendation}
+                        disabled={isBuildRecommendationLoading || !analysisResult || role === 'any'}
+                        className="mt-4 w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isBuildRecommendationLoading ? 'Generando Build ✨' : 'Obtener Recomendación de Build Estándar ✨'}
+                    </button>
+                    
+                    {isLlmLoading && (
+                        <div className="text-center text-purple-400 text-lg mt-4">
+                            Generando consejos de la IA...
+                        </div>
+                    )}
+
+                    {llmAdvice && !isLlmLoading && (
+                        <div className="mt-6 p-4 bg-gray-800 rounded-lg border border-purple-500 shadow-inner">
+                            <h4 className="text-xl font-semibold mb-3 text-purple-300">Consejos Generados por IA:</h4>
+                            <p className="text-gray-200 whitespace-pre-line">{llmAdvice}</p>
+                        </div>
+                    )}
+
+                    {isCounterSynergyLoading && (
+                        <div className="text-center text-blue-400 text-lg mt-4">
+                            Generando consejos de enfrentamiento y sinergias...
+                        </div>
+                    )}
+
+                    {counterSynergyAdvice && !isCounterSynergyLoading && (
+                        <div className="mt-6 p-4 bg-gray-800 rounded-lg border border-blue-500 shadow-inner">
+                            <h4 className="text-xl font-semibold mb-3 text-blue-300">Consejos de Counters y Sinergias (IA):</h4>
+                            <p className="text-gray-200 whitespace-pre-line">{counterSynergyAdvice}</p>
+                        </div>
+                    )}
+
+                    {isBuildRecommendationLoading && (
+                        <div className="text-center text-red-400 text-lg mt-4">
+                            Generando recomendación de build estándar...
+                        </div>
+                    )}
+
+                    {buildRecommendation && !isBuildRecommendationLoading && (
+                        <div className="mt-6 p-4 bg-gray-800 rounded-lg border border-red-500 shadow-inner">
+                            <h4 className="text-xl font-semibold mb-3 text-red-300">Recomendación de Build Estándar (IA):</h4>
+                            <p className="text-gray-200 whitespace-pre-line">{buildRecommendation}</p>
+                        </div>
+                    )}
+                </div>
+            )}
+            {showMessage && <MessageBox message={messageContent} onClose={() => setShowMessage(false)} />}
+        </div>
+    );
+};
+
+// NEW: Builds and Matchups Component
+const BuildsAndMatchups = () => {
+    const [myChampion, setMyChampion] = useState('');
+    const [role, setRole] = useState('any');
+    const [allyChampionsInput, setAllyChampionsInput] = useState(''); // Comma-separated allies
+    const [rivalChampionsInput, setRivalChampionsInput] = useState(''); // Comma-separated rivals
+    const [teamBuildRecommendation, setTeamBuildRecommendation] = useState(null);
+    const [isTeamBuildRecommendationLoading, setIsTeamBuildRecommendationLoading] = useState(false);
+    const [showMessage, setShowMessage] = useState(false);
+    const [messageContent, setMessageContent] = useState("");
+
+    const handleGenerateTeamBuildRecommendation = async () => {
+        if (!myChampion.trim()) {
+            setMessageContent("Por favor, introduce el nombre de tu campeón.");
+            setShowMessage(true);
+            return;
+        }
+        if (role === 'any') {
+            setMessageContent("Por favor, selecciona un rol específico para una recomendación de build más precisa.");
+            setShowMessage(true);
+            return;
+        }
+        
+        // Parse comma-separated champion names
+        const allies = allyChampionsInput.split(',').map(name => name.trim()).filter(name => name !== '');
+        const rivals = rivalChampionsInput.split(',').map(name => name.trim()).filter(name => name !== '');
+
+        setIsTeamBuildRecommendationLoading(true);
+        setTeamBuildRecommendation(null); // Clear previous advice
+
+        try {
+            const prompt = `Actúa como un experto en builds de League of Legends. Dame una recomendación de build completa (incluyendo item inicial, 3-4 items principales, 1-2 items situacionales, y las botas), así como 2 runas clave primarias y 2 runas clave secundarias para el campeón ${myChampion}.
+
+            Considera la siguiente composición de equipo:
+            Tu Campeón: ${myChampion} (Rol: ${role})
+            Aliados: ${allies.length > 0 ? allies.join(', ') : 'Ninguno'}
+            Rivales: ${rivals.length > 0 ? rivals.join(', ') : 'Ninguno'}
+
+            La build debe ser óptima para tu campeón en tu rol, teniendo en cuenta las sinergias con tus aliados y cómo contrarrestar a los campeones rivales. Sé conciso y utiliza el formato de lista para cada sección de la build y las runas.`;
+
+            let chatHistory = [];
+            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+            const payload = { contents: chatHistory };
+            const apiKey = ""; // Leave as-is. Canvas will provide the key.
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+            if (result.candidates && result.candidates.length > 0 &&
+                result.candidates[0].content && result.candidates[0].content.parts &&
+                result.candidates[0].content.parts.length > 0) {
+                const text = result.candidates[0].content.parts[0].text;
+                setTeamBuildRecommendation(text);
+            } else {
+                setMessageContent("No se pudo generar la recomendación de build para la composición del equipo. Inténtalo de nuevo.");
+                setShowMessage(true);
+            }
+        } catch (error) {
+            console.error("Error al llamar a la API de Gemini para la build de equipo:", error);
+            setMessageContent("Ocurrió un error al generar la recomendación de build de equipo. Por favor, inténtalo más tarde.");
+            setShowMessage(true);
+        } finally {
+            setIsTeamBuildRecommendationLoading(false);
+        }
+    };
+
+    // Message box component
+    const MessageBox = ({ message, onClose }) => (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-gray-700 p-6 rounded-lg shadow-xl text-center">
+                <p className="text-lg mb-4">{message}</p>
+                <button
+                    onClick={onClose}
+                    className="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300"
+                >
+                    Entendido
+                </button>
+            </div>
+        </div>
+    );
+
+    return (
+        <div className="text-center p-4">
+            <h2 className="text-3xl font-bold mb-6 text-orange-300">Builds y Enfrentamientos</h2>
+            <p className="mb-4 text-gray-300">
+                ¡Obtén la mejor recomendación de build para tu campeón, considerando la composición completa de aliados y rivales!
+            </p>
+
+            <div className="flex flex-col gap-4 mb-6">
+                <input
+                    type="text"
+                    placeholder="Tu Campeón (ej. Sett)"
+                    value={myChampion}
+                    onChange={(e) => setMyChampion(e.target.value)}
+                    className="p-3 rounded-lg bg-gray-700 border border-gray-600 text-white placeholder-gray-400 focus:ring-2 focus:ring-teal-500 focus:border-transparent w-full"
+                />
+                <select
+                    value={role}
+                    onChange={(e) => setRole(e.target.value)}
+                    className="p-3 rounded-lg bg-gray-700 border border-gray-600 text-white focus:ring-2 focus:ring-teal-500 focus:border-transparent w-full"
+                >
+                    <option value="any">Selecciona tu Rol (Obligatorio)</option>
+                    <option value="Top">Top</option>
+                    <option value="Jungle">Jungla</option>
+                    <option value="Mid">Medio</option>
+                    <option value="ADC">ADC</option>
+                    <option value="Support">Soporte</option>
+                </select>
+                <input
+                    type="text"
+                    placeholder="Campeones Aliados (ej. Lee Sin, Orianna)"
+                    value={allyChampionsInput}
+                    onChange={(e) => setAllyChampionsInput(e.target.value)}
+                    className="p-3 rounded-lg bg-gray-700 border border-gray-600 text-white placeholder-gray-400 focus:ring-2 focus:ring-teal-500 focus:border-transparent w-full"
+                />
+                <input
+                    type="text"
+                    placeholder="Campeones Rivales (ej. Garen, Katarina)"
+                    value={rivalChampionsInput}
+                    onChange={(e) => setRivalChampionsInput(e.target.value)}
+                    className="p-3 rounded-lg bg-gray-700 border border-gray-600 text-white placeholder-gray-400 focus:ring-2 focus:ring-teal-500 focus:border-transparent w-full"
+                />
+                <button
+                    onClick={handleGenerateTeamBuildRecommendation}
+                    disabled={isTeamBuildRecommendationLoading || !myChampion.trim() || role === 'any'}
+                    className="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    {isTeamBuildRecommendationLoading ? 'Generando Build para Equipo ✨' : 'Obtener Mejor Build para el Equipo ✨'}
+                </button>
+            </div>
+
+            {isTeamBuildRecommendationLoading && (
+                <div className="text-center text-yellow-400 text-lg mt-4">
+                    Generando la build óptima para tu composición de equipo...
+                </div>
+            )}
+
+            {teamBuildRecommendation && !isTeamBuildRecommendationLoading && (
+                <div className="mt-6 p-4 bg-gray-800 rounded-lg border border-yellow-500 shadow-inner text-left">
+                    <h4 className="text-xl font-semibold mb-3 text-yellow-300">Recomendación de Build para tu Equipo (IA):</h4>
+                    <p className="text-gray-200 whitespace-pre-line">{teamBuildRecommendation}</p>
+                </div>
+            )}
+            {showMessage && <MessageBox message={messageContent} onClose={() => setShowMessage(false)} />}
+        </div>
+    );
+};
+
+
+// Dodging Minigame Component
+const DodgingMinigame = () => {
+    const canvasRef = useRef(null);
+    const [score, setScore] = useState(0);
+    const [gameOver, setGameOver] = useState(false);
+    const [gameStarted, setGameStarted] = useState(false);
+    const [messageContent, setMessageContent] = useState("");
+    const [showMessage, setShowMessage] = useState(false);
+    const gameLoopRef = useRef();
+
+    const player = useRef({ x: 0, y: 0, size: 20, speed: 5 });
+    const projectiles = useRef([]);
+    const projectileSpeed = useRef(2);
+    const lastProjectileTime = useRef(0);
+    const projectileSpawnInterval = useRef(500); // milliseconds
+
+    // Adjust projectile spawn interval based on score
+    const updateGameDifficulty = useCallback(() => {
+        if (score >= 50 && score < 100) {
+            projectileSpeed.current = 3;
+            projectileSpawnInterval.current = 400;
+        } else if (score >= 100 && score < 200) {
+            projectileSpeed.current = 4;
+            projectileSpawnInterval.current = 300;
+        } else if (score >= 200) {
+            projectileSpeed.current = 5;
+            projectileSpawnInterval.current = 200;
+        }
+    }, [score]);
+
+    // Game initialization and reset
+    const initializeGame = useCallback(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) {
+            console.log("Canvas not found on initializeGame (Dodging)."); // Debug log
+            return;
+        }
+        const ctx = canvas.getContext('2d');
+        console.log("Initializing Dodging Minigame. Canvas dimensions:", canvas.offsetWidth, "x", canvas.offsetHeight); // Debug log
+
+        // Adjust canvas dimensions for responsiveness
+        canvas.width = canvas.offsetWidth;
+        canvas.height = Math.min(canvas.offsetWidth * 0.75, 400); // Maintain aspect ratio, max height 400px
+
+        player.current = { x: canvas.width / 2, y: canvas.height - 30, size: 20, speed: 5 };
+        projectiles.current = [];
+        setScore(0);
+        setGameOver(false);
+        projectileSpeed.current = 2;
+        projectileSpawnInterval.current = 500;
+        lastProjectileTime.current = performance.now();
+        draw(); // Initial draw to make sure canvas is not empty
+    }, [draw]); // Added draw to dependency array as it's called inside
+
+    useEffect(() => {
+        initializeGame();
+        const handleResize = () => initializeGame();
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [initializeGame]);
+
+    useEffect(() => {
+        updateGameDifficulty();
+    }, [score, updateGameDifficulty]);
+
+
+    // Draw function
+    const draw = useCallback(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) {
+            console.log("Canvas not found on draw (Dodging)."); // Debug log
+            return;
+        }
+        const ctx = canvas.getContext('2d');
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
+
+        // Draw player
+        ctx.fillStyle = '#6EE7B7'; // Teal-300 for player
+        ctx.beginPath();
+        ctx.arc(player.current.x, player.current.y, player.current.size / 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#2DD4BF'; // Teal-400 border
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Draw projectiles
+        ctx.fillStyle = '#F87171'; // Red-400 for projectiles
+        projectiles.current.forEach(p => {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size / 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#EF4444'; // Red-500 border
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        });
+
+        // Display score
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = '24px "Inter", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(`Puntuación: ${score}`, 10, 30);
+    }, [score]); // score is a dependency for draw
+
+    // Game update logic
+    const update = useCallback((deltaTime) => {
+        const canvas = canvasRef.current;
+        if (!canvas || gameOver) return;
+
+        // Move projectiles
+        projectiles.current = projectiles.current.map(p => ({
+            ...p,
+            y: p.y + projectileSpeed.current * (deltaTime / 16.66) // Normalize speed to framerate
+        })).filter(p => p.y < canvas.height + p.size); // Remove off-screen projectiles
+
+        // Spawn new projectiles
+        if (performance.now() - lastProjectileTime.current > projectileSpawnInterval.current) {
+            projectiles.current.push({
+                x: Math.random() * (canvas.width - 20) + 10,
+                y: -10, // Start above canvas
+                size: Math.random() * 10 + 15 // Random size between 15 and 25
+            });
+            lastProjectileTime.current = performance.now();
+        }
+
+        // Check for collisions
+        const playerRect = {
+            x: player.current.x - player.current.size / 2,
+            y: player.current.y - player.current.size / 2,
+            width: player.current.size,
+            height: player.current.size
+        };
+
+        for (let i = 0; i < projectiles.current.length; i++) {
+            const p = projectiles.current[i];
+            const projectileRect = {
+                x: p.x - p.size / 2,
+                y: p.y - p.size / 2,
+                width: p.size,
+                height: p.size
+            };
+
+            // Simple AABB collision detection
+            if (playerRect.x < projectileRect.x + projectileRect.width &&
+                playerRect.x + playerRect.width > projectileRect.x &&
+                playerRect.y < projectileRect.y + projectileRect.height &&
+                playerRect.y + projectileRect.height > projectileRect.y) {
+                setGameOver(true);
+                setGameStarted(false); // Stop the game loop
+                setMessageContent(`¡Juego Terminado! Tu puntuación final: ${score}. ¡Intenta mejorar!`);
+                setShowMessage(true);
+                return;
+            }
+        }
+
+        setScore(prevScore => prevScore + 1); // Increase score
+        draw(); // Redraw
+    }, [gameOver, score, draw]); // Added draw to dependency array
+
+    // Game loop
+    const gameLoop = useCallback((timestamp) => {
+        if (!gameStarted || gameOver) {
+            cancelAnimationFrame(gameLoopRef.current);
+            return;
+        }
+
+        const deltaTime = timestamp - (gameLoop.lastTimestamp || timestamp);
+        gameLoop.lastTimestamp = timestamp;
+
+        update(deltaTime);
+        gameLoopRef.current = requestAnimationFrame(gameLoop);
+    }, [gameStarted, gameOver, update]);
+
+    // Event listener for player movement (mouse/touch)
+    const handleMouseMove = useCallback((e) => {
+        if (gameOver || !gameStarted) return;
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
+        const rect = canvas.getBoundingClientRect();
+        let clientX;
+        if (e.type === 'touchmove' && e.touches[0]) {
+            clientX = e.touches[0].clientX;
+        } else if (e.type === 'mousemove') {
+            clientX = e.clientX;
+        } else {
+            return;
+        }
+
+        let newX = clientX - rect.left;
+        // Keep player within canvas bounds
+        if (newX < player.current.size / 2) newX = player.current.size / 2;
+        if (newX > canvas.width - player.current.size / 2) newX = canvas.width - player.current.size / 2;
+        player.current.x = newX;
+    }, [gameOver, gameStarted]);
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
+        canvas.addEventListener('mousemove', handleMouseMove);
+        canvas.addEventListener('touchmove', handleMouseMove); // For touch devices
+
+        return () => {
+            canvas.removeEventListener('mousemove', handleMouseMove);
+            canvas.removeEventListener('touchmove', handleMouseMove);
+            cancelAnimationFrame(gameLoopRef.current);
+        };
+    }, [handleMouseMove]);
+
+    const startGame = () => {
+        console.log("Starting Dodging Minigame..."); // Debug log
+        initializeGame();
+        setGameStarted(true);
+        gameLoopRef.current = requestAnimationFrame(gameLoop);
+    };
+
+    // Message box component
+    const MessageBox = ({ message, onClose }) => (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-gray-700 p-6 rounded-lg shadow-xl text-center">
+                <p className="text-lg mb-4">{message}</p>
+                <button
+                    onClick={onClose}
+                    className="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300"
+                >
+                    Entendido
+                </button>
+            </div>
+        </div>
+    );
+
+    return (
+        <div className="text-center p-4">
+            <h2 className="text-3xl font-bold mb-6 text-teal-300">Minijuego de Esquive</h2>
+            <p className="mb-4 text-gray-300">
+                ¡Esquiva los proyectiles y haz la mayor puntuación posible! Mueve el ratón o desliza el dedo para controlar a tu campeón.
+            </p>
+            <div className="relative w-full max-w-xl mx-auto rounded-lg overflow-hidden border-2 border-teal-500 shadow-xl">
+                <canvas
+                    ref={canvasRef}
+                    className="bg-gray-900 w-full block"
+                ></canvas>
+                {!gameStarted && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-70">
+                        <button
+                            onClick={startGame}
+                            className="bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105"
+                        >
+                            {gameOver ? 'Volver a Jugar' : 'Empezar Juego'}
+                        </button>
+                    </div>
+                )}
+            </div>
+            {showMessage && <MessageBox message={messageContent} onClose={() => setShowMessage(false)} />}
+        </div>
+    );
+};
+
+// Farming Minigame Component
+const FarmingMinigame = () => {
+    const canvasRef = useRef(null);
+    const [score, setScore] = useState(0);
+    const [minionsKilled, setMinionsKilled] = useState(0);
+    const [lastHitsNeeded, setLastHitsNeeded] = useState(10);
+    const [gameStarted, setGameStarted] = useState(false);
+    const [gameOver, setGameOver] = useState(false);
+    const [timer, setTimer] = useState(60); // 60 seconds
+    const [messageContent, setMessageContent] = useState("");
+    const [showMessage, setShowMessage] = useState(false);
+    const gameLoopRef = useRef();
+    const timerIntervalRef = useRef();
+
+    const minions = useRef([]);
+    const minionSpawnInterval = useRef(2000); // milliseconds
+    const lastMinionSpawnTime = useRef(0);
+    const minionHealth = useRef(100);
+    const playerDamage = useRef(25); // Player's basic attack damage
+    const playerAttackRange = useRef(30); // How close player needs to be to attack
+
+    // Player character (invisible, just for positioning attacks)
+    const player = useRef({ x: 0, y: 0 });
+
+    // Function to initialize or reset the game state
+    const initializeGame = useCallback(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) {
+            console.log("Canvas not found on initializeGame (Farming)."); // Debug log
+            return;
+        }
+        const ctx = canvas.getContext('2d');
+        console.log("Initializing Farming Minigame. Canvas dimensions:", canvas.offsetWidth, "x", canvas.offsetHeight); // Debug log
+
+        // Adjust canvas dimensions for responsiveness
+        canvas.width = canvas.offsetWidth;
+        canvas.height = Math.min(canvas.offsetWidth * 0.75, 400); // Maintain aspect ratio, max height 400px
+
+        player.current = { x: canvas.width / 2, y: canvas.height - 30 }; // Player at bottom center
+        minions.current = [];
+        setScore(0);
+        setMinionsKilled(0);
+        setLastHitsNeeded(10);
+        setGameOver(false);
+        setTimer(60);
+        minionSpawnInterval.current = 2000;
+        lastMinionSpawnTime.current = performance.now();
+        draw(); // Initial draw to make sure canvas is not empty
+    }, [draw]); // Added draw to dependency array
+
+    useEffect(() => {
+        initializeGame();
+        const handleResize = () => initializeGame();
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [initializeGame]);
+
+    // Draw function
+    const draw = useCallback(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) {
+            console.log("Canvas not found on draw (Farming)."); // Debug log
+            return;
+        }
+        const ctx = canvas.getContext('2d');
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
+
+        // Draw ground (lane)
+        ctx.fillStyle = '#1A202C'; // Dark gray
+        ctx.fillRect(0, canvas.height * 0.6, canvas.width, canvas.height * 0.4);
+
+        // Draw minions
+        minions.current.forEach(m => {
+            // Minion body
+            ctx.fillStyle = m.health > 25 ? '#A78BFA' : '#EF4444'; // Purple, red if low health
+            ctx.beginPath();
+            ctx.arc(m.x, m.y, m.size / 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#8B5CF6';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Health bar background
+            ctx.fillStyle = '#333';
+            ctx.fillRect(m.x - m.size / 2, m.y - m.size / 2 - 10, m.size, 5);
+            // Health bar foreground
+            ctx.fillStyle = m.health > 25 ? '#22C55E' : '#DC2626'; // Green, red if low
+            ctx.fillRect(m.x - m.size / 2, m.y - m.size / 2 - 10, (m.health / minionHealth.current) * m.size, 5);
+
+            // Minion icon (simplified, using emoji or text)
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = '12px "Inter", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('🪖', m.x, m.y + 5); // Simple minion helmet emoji
+        });
+
+        // Display score, minions killed, and time
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = '20px "Inter", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(`Puntuación: ${score}`, 10, 30);
+        ctx.fillText(`Minions: ${minionsKilled}/${lastHitsNeeded}`, 10, 60);
+
+        ctx.textAlign = 'right';
+        ctx.fillText(`Tiempo: ${timer}s`, canvas.width - 10, 30);
+    }, [score, minionsKilled, lastHitsNeeded, timer]); // Added timer, score, minionsKilled, lastHitsNeeded to dependencies
+
+    // Game update logic
+    const update = useCallback((deltaTime) => {
+        const canvas = canvasRef.current;
+        if (!canvas || gameOver || timer <= 0) return;
+
+        // Move minions downwards
+        minions.current = minions.current.map(m => ({
+            ...m,
+            y: m.y + m.speed * (deltaTime / 16.66) // Normalize speed
+        })).filter(m => m.y < canvas.height + m.size); // Remove off-screen
+
+        // Spawn new minions
+        if (performance.now() - lastMinionSpawnTime.current > minionSpawnInterval.current) {
+            minions.current.push({
+                id: Date.now(), // Unique ID for each minion
+                x: Math.random() * (canvas.width - 40) + 20, // Random x position
+                y: -10, // Start above canvas
+                size: 25,
+                health: minionHealth.current,
+                speed: Math.random() * 0.5 + 1 // Random speed between 1 and 1.5
+            });
+            lastMinionSpawnTime.current = performance.now();
+        }
+
+        draw(); // Redraw
+    }, [gameOver, timer, draw]); // Added draw to dependency array
+
+    // Game loop
+    const gameLoop = useCallback((timestamp) => {
+        if (!gameStarted || gameOver || timer <= 0) {
+            cancelAnimationFrame(gameLoopRef.current);
+            return;
+        }
+
+        const deltaTime = timestamp - (gameLoop.lastTimestamp || timestamp);
+        gameLoop.lastTimestamp = timestamp;
+
+        update(deltaTime);
+        gameLoopRef.current = requestAnimationFrame(gameLoop);
+    }, [gameStarted, gameOver, timer, update]);
+
+    // Start game logic
+    const startGame = () => {
+        console.log("Starting Farming Minigame..."); // Debug log
+        initializeGame();
+        setGameStarted(true);
+        gameLoopRef.current = requestAnimationFrame(gameLoop);
+
+        // Start timer
+        timerIntervalRef.current = setInterval(() => {
+            setTimer(prev => {
+                if (prev <= 1) {
+                    clearInterval(timerIntervalRef.current);
+                    setGameOver(true);
+                    setGameStarted(false); // Stop game loop
+                    setMessageContent(`¡Tiempo Terminado! Has farmeado ${minionsKilled} minions con un total de ${score} puntos. ¡Buen trabajo!`);
+                    setShowMessage(true);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+    };
+
+    // Handle minion click (simulates attacking)
+    const handleCanvasClick = useCallback((e) => {
+        if (!gameStarted || gameOver || timer <= 0) {
+            console.log("Click ignored: game not started, game over, or timer <= 0."); // Debug log
+            return;
+        }
+        const canvas = canvasRef.current;
+        if (!canvas) {
+            console.log("Canvas not found on click (Farming)."); // Debug log
+            return;
+        }
+
+        const rect = canvas.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const clickY = e.clientY - rect.top;
+
+        // Check if player is close enough to attack (simulated range)
+        if (Math.abs(clickY - player.current.y) > playerAttackRange.current) {
+            setMessageContent("Estás demasiado lejos para atacar. ¡Acércate a los minions!");
+            setShowMessage(true);
+            return;
+        }
+
+        let hit = false;
+        minions.current = minions.current.map(m => {
+            // Check if click was on a minion
+            const distance = Math.sqrt(Math.pow(clickX - m.x, 2) + Math.pow(clickY - m.y, 2));
+            if (distance < m.size / 2) {
+                hit = true;
+                const newHealth = m.health - playerDamage.current;
+                if (newHealth <= 0) {
+                    // Last hit!
+                    setMinionsKilled(prev => prev + 1);
+                    setScore(prev => prev + 10); // Points for last hit
+                    return null; // Mark for removal
+                }
+                return { ...m, health: newHealth };
+            }
+            return m;
+        }).filter(m => m !== null); // Remove killed minions
+        if(hit) {
+            draw(); // Redraw after attack only if a minion was hit
+        }
+    }, [gameStarted, gameOver, timer, draw]); // Added draw to dependency array
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        canvas.addEventListener('click', handleCanvasClick);
+        return () => {
+            canvas.removeEventListener('click', handleCanvasClick);
+            cancelAnimationFrame(gameLoopRef.current);
+            clearInterval(timerIntervalRef.current);
+        };
+    }, [handleCanvasClick]);
+
+
+    // Message box component
+    const MessageBox = ({ message, onClose }) => (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-gray-700 p-6 rounded-lg shadow-xl text-center">
+                <p className="text-lg mb-4">{message}</p>
+                <button
+                    onClick={onClose}
+                    className="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300"
+                >
+                    Entendido
+                </button>
+            </div>
+        </div>
+    );
+
+    return (
+        <div className="text-center p-4">
+            <h2 className="text-3xl font-bold mb-6 text-teal-300">Minijuego de Farmeo</h2>
+            <p className="mb-4 text-gray-300">
+                ¡Practica el "last hit" a los minions! Haz clic en ellos cuando tengan poca vida para obtener puntos.
+            </p>
+            <div className="relative w-full max-w-xl mx-auto rounded-lg overflow-hidden border-2 border-teal-500 shadow-xl">
+                <canvas
+                    ref={canvasRef}
+                    className="bg-gray-900 w-full block"
+                ></canvas>
+                {!gameStarted && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-70">
+                        <button
+                            onClick={startGame}
+                            className="bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105"
+                        >
+                            {gameOver ? 'Volver a Jugar' : 'Empezar Juego'}
+                        </button>
+                    </div>
+                )}
+            </div>
+            {showMessage && <MessageBox message={messageContent} onClose={() => setShowMessage(false)} />}
+        </div>
+    );
+};
+export default App;
